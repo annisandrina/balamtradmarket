@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>WebGIS Persebaran Pasar Tradisional Kota Bandar Lampung</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+background:#F5EFE6;
+color:#5C4033;
+}
+
+/* LANDING PAGE */
+
+#home{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:30px;
+background:linear-gradient(
+135deg,
+#F5EFE6,
+#E8D5C4,
+#DDB892
+);
+}
+
+.card{
+max-width:1200px;
+background:white;
+padding:40px;
+border-radius:25px;
+box-shadow:0 8px 20px rgba(0,0,0,0.15);
+display:flex;
+gap:40px;
+align-items:center;
+}
+
+.profile{
+width:250px;
+height:250px;
+object-fit:cover;
+border-radius:50%;
+border:8px solid #DDB892;
+}
+
+.content h1{
+color:#6F4E37;
+margin-bottom:20px;
+}
+
+.content h3{
+margin-bottom:8px;
+}
+
+.content p{
+margin-top:15px;
+line-height:1.8;
+text-align:justify;
+}
+
+.btn{
+display:inline-block;
+margin-top:20px;
+padding:14px 25px;
+background:#8B6B4A;
+color:white;
+text-decoration:none;
+border-radius:15px;
+font-weight:bold;
+transition:0.3s;
+}
+
+.btn:hover{
+background:#6F4E37;
+}
+
+/* MAP */
+
+#mapSection{
+display:none;
+height:100vh;
+}
+
+#map{
+height:100vh;
+width:100%;
+}
+
+.sidebar{
+position:absolute;
+z-index:1000;
+left:10px;
+top:10px;
+width:320px;
+max-height:90vh;
+overflow-y:auto;
+background:white;
+padding:15px;
+border-radius:15px;
+box-shadow:0 4px 15px rgba(0,0,0,0.2);
+}
+
+.sidebar h2{
+margin-bottom:10px;
+color:#6F4E37;
+}
+
+.statistik{
+background:#F5EFE6;
+padding:10px;
+border-radius:10px;
+margin-bottom:15px;
+font-weight:bold;
+}
+
+.searchBox{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+margin-bottom:15px;
+}
+
+.market-list{
+list-style:none;
+}
+
+.market-list li{
+padding:10px;
+margin-bottom:8px;
+background:#F5EFE6;
+border-radius:10px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.market-list li:hover{
+background:#DDB892;
+}
+
+.backBtn{
+width:100%;
+padding:10px;
+background:#8B6B4A;
+color:white;
+border:none;
+border-radius:10px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.backBtn:hover{
+background:#6F4E37;
+}
+
+.titleMap{
+position:absolute;
+z-index:1000;
+top:10px;
+left:50%;
+transform:translateX(-50%);
+background:white;
+padding:10px 20px;
+border-radius:15px;
+font-weight:bold;
+box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.market-icon{
+font-size:22px;
+}
+
+</style>
+</head>
+<body>
+
+<section id="home">
+
+<div class="card">
+
+<img src="../Assets/foto profile.jpeg"
+class="profile">
+
+<div class="content">
+
+<h1>🤎🍪🦢 WebGIS Persebaran Pasar Tradisional Kota Bandar Lampung 🦢🍪🤎</h1>
+
+<h3>Nama : Annisa Sandrina</h3>
+<h3>NPM : 2313034039</h3>
+<h3>Program Studi : Pendidikan Geografi</h3>
+
+<p>
+Peta Persebaran Pasar Tradisional Kota Bandar Lampung menggambarkan lokasi pasar tradisional yang tersebar di berbagai wilayah Kota Bandar Lampung. Berdasarkan peta, persebaran pasar cenderung lebih banyak ditemukan pada kawasan pusat kota dan wilayah yang memiliki aktivitas ekonomi serta kepadatan penduduk yang tinggi. Keberadaan pasar tradisional umumnya berada pada lokasi yang mudah dijangkau oleh masyarakat dan memiliki akses transportasi yang baik.
+</p>
+
+<a href="#" class="btn" onclick="showMap()">
+📍 Masuk ke Peta Interaktif
+</a>
+
+</div>
+
+</div>
+
+</section>
+
+<section id="mapSection">
+
+<div class="sidebar">
+
+<h2>🤎 Statistik Pasar</h2>
+
+<div class="statistik">
+Total Pasar :
+<span id="jumlahPasar">0</span>
+</div>
+
+<input
+type="text"
+id="searchMarket"
+class="searchBox"
+placeholder="🔍 Cari nama pasar...">
+
+<h2>📍 Daftar Pasar</h2>
+
+<ul id="marketList" class="market-list"></ul>
+
+<button class="backBtn" onclick="backHome()">
+⬅ Kembali ke Beranda
+</button>
+
+</div>
+
+<div class="titleMap">
+🤎 Persebaran Pasar Tradisional Kota Bandar Lampung 🤎
+</div>
+
+<div id="map"></div>
+
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+let map;
+let geojsonLayer;
+let marketData=[];
+let initialized=false;
+
+function showMap(){
+
+document.getElementById("home").style.display="none";
+document.getElementById("mapSection").style.display="block";
+
+if(!initialized){
+initMap();
+initialized=true;
+}
+
+}
+
+function backHome(){
+
+document.getElementById("home").style.display="flex";
+document.getElementById("mapSection").style.display="none";
+
+}
+
+function initMap(){
+
+map=L.map('map').setView([-5.43,105.27],12);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+const pasarIcon=L.divIcon({
+html:'🤎',
+className:'market-icon',
+iconSize:[30,30]
+});
+
+fetch('../Data/PERSEBARAN PASAR TRADISIONAL LAMPUNG.geojson')
+
+.then(res=>res.json())
+
+.then(data=>{
+
+document.getElementById("jumlahPasar").innerHTML=
+data.features.length;
+
+geojsonLayer=L.geoJSON(data,{
+
+pointToLayer:function(feature,latlng){
+
+const marker=L.marker(latlng,{
+icon:pasarIcon
+});
+
+const nama=
+feature.properties.name ||
+"Pasar Tradisional";
+
+marker.bindPopup(
+"<b>"+nama+"</b>"
+);
+
+marketData.push({
+name:nama,
+latlng:latlng,
+marker:marker
+});
+
+return marker;
+
+}
+
+}).addTo(map);
+
+buatDaftarPasar();
+
+});
+
+}
+
+function buatDaftarPasar(){
+
+const list=document.getElementById("marketList");
+
+list.innerHTML="";
+
+marketData.forEach(function(item){
+
+const li=document.createElement("li");
+
+li.innerHTML="🤎 "+item.name;
+
+li.onclick=function(){
+
+map.setView(item.latlng,17);
+
+item.marker.openPopup();
+
+};
+
+list.appendChild(li);
+
+});
+
+}
+
+document.addEventListener("input",function(e){
+
+if(e.target.id==="searchMarket"){
+
+const keyword=
+e.target.value.toLowerCase();
+
+const items=
+document.querySelectorAll("#marketList li");
+
+items.forEach(item=>{
+
+if(item.innerText.toLowerCase().includes(keyword)){
+
+item.style.display="block";
+
+}else{
+
+item.style.display="none";
+
+}
+
+});
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
